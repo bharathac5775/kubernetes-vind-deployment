@@ -41,10 +41,19 @@ jobs:
           sudo install -c -m 0755 vcluster /usr/local/bin
           vcluster --version
 
+      - name: Load required kernel modules
+        run: |
+          sudo modprobe overlay
+          sudo modprobe bridge
+          sudo modprobe br_netfilter
+          sudo sysctl -w net.bridge.bridge-nf-call-iptables=1
+          sudo sysctl -w net.ipv4.ip_forward=1
+          lsmod | grep -E 'overlay|bridge|br_netfilter'
+
       - name: Create VIND cluster
         run: |
           vcluster use driver docker
-          vcluster create demo --connect
+          vcluster create demo --connect --timeout 300
           echo "--- Cluster info ---"
           kubectl cluster-info
           kubectl get nodes
