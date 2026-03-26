@@ -40,6 +40,94 @@ VIND uses the **Docker driver** of vCluster to provision an entire Kubernetes co
 
 ---
 
+## 🖥️ How to Install VIND on Your System
+
+### Prerequisites
+
+- **Docker** must be installed and running on your machine.
+
+### Step 1: Install the vCluster CLI
+
+**macOS:**
+```bash
+brew install loft-sh/tap/vcluster
+```
+
+**Linux:**
+```bash
+curl -L -o vcluster "https://github.com/loft-sh/vcluster/releases/latest/download/vcluster-linux-amd64" && \
+sudo install -c -m 0755 vcluster /usr/local/bin && \
+rm -f vcluster
+```
+
+**Windows:**
+Download the latest binary from [vCluster Releases](https://github.com/loft-sh/vcluster/releases) and add it to your PATH.
+
+### Step 2: Configure vCluster to Use the Docker Driver (VIND Mode)
+
+```bash
+vcluster use driver docker
+```
+
+This tells vCluster to use Docker as the backend — which is what makes it **VIND**.
+
+### Step 3: Create a Kubernetes Cluster
+
+```bash
+sudo vcluster create test-cluster
+```
+
+That's it! You now have a fully functional Kubernetes cluster running inside Docker. Verify with:
+
+```bash
+kubectl get nodes
+vcluster ls
+```
+
+### (Optional) Create a Multi-Node Cluster
+
+**Step 1:** Create a `values.yaml` file with your node configuration:
+
+```yaml
+experimental:
+  docker:
+    nodes:
+    - name: "worker-1"
+      ports:
+        - "9090:9090"
+    - name: "worker-2"
+      volumes:
+        - "/tmp/data:/data"
+      env:
+        - "NODE_ROLE=worker"
+```
+
+**Step 2:** If using volumes, make sure the mount path exists:
+
+```bash
+mkdir -p /tmp/data
+```
+
+**Step 3:** Create the multi-node cluster:
+
+```bash
+sudo vcluster create multi-node-cluster --values values.yaml
+```
+
+### Useful vCluster Commands
+
+| Command | Description |
+|---|---|
+| `vcluster ls` | List all virtual clusters |
+| `vcluster connect <name>` | Connect to a virtual cluster |
+| `vcluster disconnect` | Disconnect from a virtual cluster |
+| `vcluster delete <name>` | Delete a virtual cluster |
+| `vcluster use driver docker` | Switch to Docker driver (VIND) |
+
+> For more details, refer to the official VIND documentation: [https://github.com/loft-sh/vind](https://github.com/loft-sh/vind)
+
+---
+
 ## 🎬 About This Repository
 
 This project demonstrates a **real-world use case of VIND** — deploying a fully functional static website called **CineVerse** to a virtual Kubernetes cluster, entirely within a GitHub Actions CI/CD pipeline.
