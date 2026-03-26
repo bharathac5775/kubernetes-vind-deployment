@@ -3,6 +3,8 @@ name: Deploy Static Website using VIND
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
