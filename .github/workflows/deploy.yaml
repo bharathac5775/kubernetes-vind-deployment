@@ -1,0 +1,120 @@
+name: Deploy Static Website using VIND
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Checkout code ──
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Tooling ──
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      # ── Compute lowercase image name (GHCR requires lowercase) ──
+      - name: Set image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}/movie-site:${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      # ── Container registry ──
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build & Push Docker image
+        run: |
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      # ── Virtual Kubernetes cluster (VIND) ──
+      - name: Install vcluster CLI
+        run: |
+          curl -L -o vcluster "https://github.com/loft-sh/vcluster/releases/latest/download/vcluster-linux-amd64"
+          sudo install -c -m 0755 vcluster /usr/local/bin
+          vcluster --version
+
+      - name: Create VIND cluster
+        run: |
+          vcluster use driver docker
+          vcluster create demo --connect
+          echo "--- Cluster info ---"
+          kubectl cluster-info
+          kubectl get nodes
+
+      # ── Deploy application ──
+      - name: Create image pull secret
+        run: |
+          kubectl create secret docker-registry ghcr-secret \
+            --docker-server=ghcr.io \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Inject image into manifest & deploy
+        run: |
+          sed -i "s|IMAGE_PLACEHOLDER|${IMAGE}|g" k8s/deployment.yaml
+          echo "--- Deploying manifests ---"
+          cat k8s/deployment.yaml
+          kubectl apply -f k8s/
+
+      - name: Wait for rollout
+        run: kubectl rollout status deployment/movie-site --timeout=180s
+
+      - name: Verify pods are running
+        run: |
+          kubectl get pods -o wide
+          kubectl get svc
+
+      # ── Expose via ngrok ──
+      - name: Install ngrok
+        run: |
+          curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok-v3-stable-linux-amd64.tgz | tar -xz
+          sudo mv ngrok /usr/local/bin
+          ngrok --version
+
+      - name: Configure ngrok
+        run: ngrok config add-authtoken "${{ secrets.NGROK_AUTH_TOKEN }}"
+
+      - name: Port-forward service
+        run: |
+          kubectl port-forward svc/movie-service 8080:80 &
+          sleep 5
+          echo "Port-forward active on localhost:8080"
+          curl -s -o /dev/null -w "HTTP %{http_code}" http://localhost:8080
+
+      - name: Start ngrok tunnel
+        run: |
+          ngrok http 8080 --log=stdout > /tmp/ngrok.log 2>&1 &
+          sleep 5
+
+      - name: "🎬 Show public URL"
+        run: |
+          echo "============================================"
+          echo "  🎬  YOUR WEBSITE IS LIVE!  🎬"
+          echo "============================================"
+          curl -s http://localhost:4040/api/tunnels | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          for t in data.get('tunnels', []):
+              print(f\"  🌐  {t['public_url']}\")
+          " || echo "  (check ngrok logs at /tmp/ngrok.log)"
+          echo "============================================"
+          echo "  Tunnel will stay open for ~10 minutes"
+          echo "============================================"
+
+      - name: Keep alive for 10 minutes
+        run: |
+          echo "Sleeping 600s — open the URL above in your browser..."
+          sleep 600
+
+      # ── Cleanup ──
+      - name: Cleanup VIND cluster
+        if: always()
+        run: vcluster delete demo --force || true

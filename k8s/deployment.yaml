@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movie-site
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: movie-site
+  template:
+    metadata:
+      labels:
+        app: movie-site
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: movie-site
+          image: IMAGE_PLACEHOLDER
+          ports:
+            - containerPort: 80
