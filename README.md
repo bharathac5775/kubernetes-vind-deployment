@@ -187,6 +187,21 @@ Open the URL and you'll see the fully deployed CineVerse website running on a Ku
 
 ---
 
-## 📝 License
+## � Result Screenshots
+
+### GitHub Actions Pipeline
+![GitHub Actions Pipeline](result-images/github%20action%20pipline%20.png)
+
+### GitHub Actions Pipeline — VIND Cluster Logs
+![GitHub Actions Pipeline with VIND Logs](result-images/github%20action%20pipline%20with%20vind%20logs.png)
+
+### Deployed CineVerse Website
+![Static Website](result-images/Static%20website.png)
+
+![Static Website Continued](result-images/Static%20website...png)
+
+---
+
+## �📝 License
 
 This project is for educational and demonstration purposes.
