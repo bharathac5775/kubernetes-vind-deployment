@@ -32,8 +32,14 @@ VIND uses the **Docker driver** of vCluster to provision an entire Kubernetes co
 
 ### Why VIND Stands Out
 
-- **Speed:** VIND clusters boot in seconds — ideal for CI pipelines where every minute counts.
-- **Lightweight:** No VM overhead. The entire cluster lives inside a single container sharing the host kernel.
+- 🚀 **Faster than kind** — Optimized container-based architecture boots clusters in seconds.
+- 💤 **Sleep & Wake** — Pause clusters to save resources, resume them instantly when needed.
+- 🎨 **Built-in UI** — Free vCluster Platform UI for visual cluster management.
+- ⚡ **Load Balancers Out of the Box** — Automatic LoadBalancer services without extra setup (no MetalLB needed).
+- 🐳 **Docker Native** — Leverages Docker's networking and storage directly.
+- 🔄 **Pull-through Cache** — Faster image pulls via the local Docker daemon — no redundant downloads.
+- 🌐 **Hybrid Nodes** — Join external nodes (even cloud instances) to your local cluster via VPN.
+- 📸 **Snapshots** — Save and restore cluster state (coming soon).
 - **Ephemeral by design:** Create a cluster, run tests, deploy apps, tear it down — all in one pipeline run. Zero leftover resources.
 - **Multi-tenancy ready:** Need 5 isolated environments? Spin up 5 virtual clusters on the same Docker host without multiplying resource usage.
 - **Production-like:** Despite being lightweight, VIND provides a fully conformant Kubernetes API — your manifests, Helm charts, and kubectl commands work exactly as they would on a real cluster.
